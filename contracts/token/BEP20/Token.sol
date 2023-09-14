@@ -5,26 +5,11 @@ pragma solidity 0.6.12;
 import './BEP20.sol';
 
 contract WalletikaToken is BEP20('Walletika', 'WTK') {
-    uint8 public inflationRateAnnually;
-    uint256 public inflationDurationEndDate;
-
-    uint256 private _inflationDuration;
-    uint256 private _availableToMint;
+    uint256 private _initalSupply = 70000000e18;
+    uint256 private _maxSupply = 100000000e18;
 
     constructor() public {
-        inflationRateAnnually = 5;
-        _inflationDuration = 365 days;
-
-        uint256 _initialSupply = 20000000e18;
-        _mint(owner(), _initialSupply);
-    }
-
-    function availableToMintCurrentYear() public view returns (uint256) {
-        if (block.timestamp > inflationDurationEndDate) {
-            return totalSupply().mul(inflationRateAnnually).div(100);
-        }
-
-        return _availableToMint;
+        _mint(owner(), _initalSupply);
     }
 
     function transferMultiple(address[] calldata addresses, uint256[] calldata amounts) external returns (bool) {
@@ -58,13 +43,7 @@ contract WalletikaToken is BEP20('Walletika', 'WTK') {
     /* ========== OWNER FUNCTIONS ========== */
 
     function mint(uint256 amount) external onlyOwner returns (bool) {
-        require(amount > 0, "Cannot mint 0");
-
-        _availableToMint = availableToMintCurrentYear().sub(amount, "BEP20: available tokens are not enough to mint");
-
-        if (block.timestamp > inflationDurationEndDate) {
-            inflationDurationEndDate = block.timestamp + _inflationDuration;
-        }
+        require(amount.add(totalSupply()) <= _maxSupply, "BEP20: amount exceeds max supply");
 
         _mint(owner(), amount);
         return true;
